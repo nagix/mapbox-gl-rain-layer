@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja_JP">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-39988758-2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-39988758-2');
+    </script>
+    <meta charset="utf-8">
+    <title>Japan Weather 3D</title>
+    <meta name="description" content="An animated rain layer for Mapbox GL JS. This data visualization was produced by Akihiko Kusanagi." />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta property="og:title" content="Mapbox GL JS Rain Layer Demo" />
+    <meta property="og:description" content="An animated rain layer for Mapbox GL JS. This data visualization was produced by Akihiko Kusanagi." />
+    <meta property="og:locale" content="ja_JP" />
+    <link rel="canonical" href="https://nagix.github.io/mapbox-gl-rain-layer" />
+    <meta property="og:url" content="https://nagix.github.io/mapbox-gl-rain-layer" />
+    <meta property="og:site_name" content="Mapbox GL JS Rain Layer Demo" />
+    <meta property="og:image" content="https://nagix.github.io/mapbox-gl-rain-layer/screenshot1.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@nagix" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet">
+    <link href="rain-layer.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-rain-layer@0.1.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/suncalc@1.8.0/suncalc.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div id="map"></div>
+        <div id="title">
+            <div id="time"></div>
+            <div id="last-updated"></div>
+        </div>
+        <div id="info-bg">
+            <div id="info">
+                <h3>About Mapbox GL JS Rain Layer</h3>
+                <p>This data visualization was produced by <a href="https://nagix.github.io" target="_blank">Akihiko Kusanagi</a>. The data for this visualization are sourced from <a href="https://www.rainviewer.com" target="_blank">RainViewer</a>, which also gathers data from <a href="https://www.rainviewer.com/sources.html" target="_blank">different data sources</a>.</p>
+                <p>Source code is available at  <a href="https://github.com/nagix/mapbox-gl-rain-layer" target="_blank">GitHub repository</a>.</p>
+            </div>
+        </div>
+        <div id="legend"></div>
+    </div>
+    <script>
+        class MapboxGLButtonControl {
+            constructor(optionArray) {
+                this._options = optionArray.map(options => ({
+                    className: options.className || '',
+                    title: options.title || '',
+                    eventHandler: options.eventHandler
+                }));
+            }
+
+            onAdd(map) {
+                const me = this;
+
+                me._map = map;
+
+                me._container = document.createElement('div');
+                me._container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+
+                me._buttons = me._options.map(options => {
+                    const button = document.createElement('button'),
+                        icon = document.createElement('span'),
+                        {className, title, eventHandler} = options;
+
+                    button.className = className;
+                    button.type = 'button';
+                    button.title = title;
+                    button.setAttribute('aria-label', title);
+                    button.onclick = eventHandler;
+
+                    icon.className = 'mapboxgl-ctrl-icon';
+                    icon.setAttribute('aria-hidden', true);
+                    button.appendChild(icon);
+
+                    me._container.appendChild(button);
+
+                    return button;
+                });
+
+                return me._container;
+            }
+
+            onRemove() {
+                const me = this;
+
+                me._container.parentNode.removeChild(me._container);
+                me._map = undefined;
+            }
+        }
+
+        function setSunPosition(map) {
+            const {lng, lat} = map.getCenter();
+            const {azimuth, altitude} = SunCalc.getPosition(Date.now(), lat, lng);
+            const sunAzimuth = 180 + azimuth * 180 / Math.PI;
+            const sunAltitude = 90 - altitude * 180 / Math.PI;
+            map.setPaintProperty('sky', 'sky-atmosphere-sun', [sunAzimuth, sunAltitude]);
+        }
+
+        const root = document.getElementById('root');
+        const time = document.getElementById('time');
+        const lastUpdated = document.getElementById('last-updated');
+        const legend = document.getElementById('legend');
+        const infoBg = document.getElementById('info-bg');
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoibmFnaXgiLCJhIjoiY2tzaGo1d2pmMDJnNDJ3b3g2OGdoZmNndCJ9.BB-J6EltiYYos_QY5X80Rw';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'rain-layer.json',
+            minZoom: 2,
+            maxZoom: 18,
+            hash: true
+        });
+        map.addControl(new mapboxgl.NavigationControl());
+        map.addControl(new mapboxgl.FullscreenControl({container: root}));
+        map.addControl(new MapboxGLButtonControl([{
+            className: 'mapboxgl-ctrl-info',
+            title: 'About Mapbox GL JS Rain Layer',
+            eventHandler() {
+                infoBg.style.display = 'block';
+            }
+        }]));
+
+        infoBg.addEventListener('click', () => {
+            infoBg.style.display = 'none';
+        });
+
+        const rainLayer = new RainLayer({
+            id: 'rain',
+            source: 'rainviewer',
+            scale: 'noaa'
+        });
+        rainLayer.on('refresh', ({timestamp}) => {
+            const date = new Date(timestamp * 1000).toString().replace(/\(.+\)$/, '');
+            lastUpdated.innerHTML = `Last updated: ${date}`;
+        });
+        legend.innerHTML = rainLayer.getLegendHTML();
+
+        map.once('styledata', () => {
+            map.addLayer(rainLayer, 'water-boundary-bg');
+            map.on('move', e => {
+                setSunPosition(map);
+            });
+            setInterval(() => {
+                setSunPosition(map);
+            }, 60000);
+        });
+
+        let lastClockUpdated;
+
+        function repeat() {
+            const now = Date.now();
+
+            if (Math.floor(now / 1000) !== Math.floor(lastClockUpdated / 1000)) {
+                time.innerHTML = new Date().toString().replace(/\(.+\)$/, '');
+                lastClockUpdated = now;
+            }
+            requestAnimationFrame(repeat);
+        }
+
+        repeat();
+    </script>
+</body>
+</html>

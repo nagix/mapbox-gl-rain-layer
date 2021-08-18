@@ -1,0 +1,46 @@
+{
+  "name": "mapbox-gl-rain-layer",
+  "version": "0.1.0",
+  "description": "Mapbox GL Rain Layer",
+  "main": "dist/mapbox-gl-rain-layer.js",
+  "module": "dist/mapbox-gl-rain-layer.esm.js",
+  "dependencies": {
+    "three": "^0.131.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.0.4",
+    "@rollup/plugin-strip": "^2.1.0",
+    "eslint": "^7.32.0",
+    "eslint-config-mourner": "^3.0.0",
+    "eslint-plugin-import": "^2.24.0",
+    "eslint-plugin-jsdoc": "^36.0.7",
+    "mapbox-gl": "^2.4.1",
+    "rollup": "^2.56.2",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "peerDependencies": {
+    "mapbox-gl": ">=0.54.0"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "lint": "eslint --cache --ignore-path .gitignore src"
+  },
+  "files": [
+    "dist/mapbox-gl-rain-layer.*",
+    "src/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nagix/mapbox-gl-rain-layer.git"
+  },
+  "author": "Akihiko Kusanagi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nagix/mapbox-gl-rain-layer/issues"
+  },
+  "homepage": "https://nagix.github.io/mapbox-gl-rain-layer",
+  "jsdelivr": "dist/mapbox-gl-rain-layer.min.js",
+  "unpkg": "dist/mapbox-gl-rain-layer.min.js"
+}

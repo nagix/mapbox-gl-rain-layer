@@ -1,0 +1,39 @@
+{
+    "jma": {
+        "type": "raster",
+        "tiles": [
+            "https://www.jma.go.jp/bosai/jmatile/data/nowc/${[0].basetime}/none/${[0].validtime}/surf/hrpns/{z}/{x}/{y}.png"
+        ],
+        "tileSize": 256,
+        "minzoom": 0,
+        "maxzoom": 10,
+        "attribution": "<a href=\"https://www.jma.go.jp\">© Japan Meteorological Agency</a>",
+        "catalog": "https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N1.json",
+        "interval": 300000,
+        "colors": [
+            "#000000",
+            "#F2F2FF",
+            "#A0D2FF",
+            "#218CFF",
+            "#0041FF",
+            "#FAF500",
+            "#FF9900",
+            "#FF2800",
+            "#B40068"
+        ],
+        "timestamp": "${[0].basetime}"
+    },
+    "rainviewer": {
+        "type": "raster",
+        "tiles": [
+            "${host}${radar.past[-1].path}/256/{z}/{x}/{y}/0/0_0.png"
+        ],
+        "tileSize": 256,
+        "minzoom": 1,
+        "maxzoom": 20,
+        "attribution": "<a href=\"https://www.rainviewer.com\">© RainViewer</a>",
+        "catalog": "https://api.rainviewer.com/public/weather-maps.json",
+        "interval": 600000,
+        "timestamp": "${radar.past[-1].time}"
+    }
+}

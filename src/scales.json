@@ -1,0 +1,71 @@
+{
+    "noaa": {
+        "scale": [
+            {
+                "value": 0,
+                "color": "#000000"
+            },
+            {
+                "value": 5,
+                "color": "#69E5E4"
+            },
+            {
+                "value": 10,
+                "color": "#4599E9"
+            },
+            {
+                "value": 15,
+                "color": "#0F02E7"
+            },
+            {
+                "value": 20,
+                "color": "#72F44A"
+            },
+            {
+                "value": 25,
+                "color": "#59C239"
+            },
+            {
+                "value": 30,
+                "color": "#3E8B27"
+            },
+            {
+                "value": 35,
+                "color": "#F8F551"
+            },
+            {
+                "value": 40,
+                "color": "#DDBC3F"
+            },
+            {
+                "value": 45,
+                "color": "#EA9736"
+            },
+            {
+                "value": 50,
+                "color": "#E33323"
+            },
+            {
+                "value": 55,
+                "color": "#BF281C"
+            },
+            {
+                "value": 60,
+                "color": "#A72318"
+            },
+            {
+                "value": 65,
+                "color": "#E131F0"
+            },
+            {
+                "value": 70,
+                "color": "#8D54BF"
+            },
+            {
+                "value": 75,
+                "color": "#FEFEFE"
+            }
+        ],
+        "align": "center"
+    }
+}

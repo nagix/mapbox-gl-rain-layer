@@ -1,0 +1,81 @@
+import fs from 'fs';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import json from '@rollup/plugin-json';
+import {terser} from 'rollup-plugin-terser';
+import strip from '@rollup/plugin-strip';
+
+const pkg = JSON.parse(fs.readFileSync('package.json'));
+const banner = `/*!
+ * mapbox-gl-rain-layer v${pkg.version}
+ * ${pkg.homepage}
+ * (c) ${new Date().getFullYear()} ${pkg.author}
+ * Released under the ${pkg.license} license
+ */`;
+
+export default [{
+	input: 'src/index.js',
+	output: {
+		name: 'RainLayer',
+		file: `dist/${pkg.name}.js`,
+		format: 'umd',
+		indent: false,
+		sourcemap: true,
+		banner,
+		globals: {
+			'mapbox-gl': 'mapboxgl'
+		}
+	},
+	external: ['mapbox-gl'],
+	plugins: [
+		resolve(),
+		commonjs(),
+		json()
+	]
+}, {
+	input: 'src/index.js',
+	output: {
+		name: 'RainLayer',
+		file: `dist/${pkg.name}.min.js`,
+		format: 'umd',
+		indent: false,
+		sourcemap: true,
+		banner,
+		globals: {
+			'mapbox-gl': 'mapboxgl'
+		}
+	},
+	external: ['mapbox-gl'],
+	plugins: [
+		resolve(),
+		commonjs(),
+		json(),
+		terser({
+			compress: {
+				pure_getters: true,
+				passes: 3
+			}
+		}),
+		strip({
+			sourceMap: true
+		})
+	]
+}, {
+	input: 'src/index.js',
+	output: {
+		name: 'RainLayer',
+		file: pkg.module,
+		format: 'esm',
+		indent: false,
+		banner,
+		globals: {
+			'mapbox-gl': 'mapboxgl'
+		}
+	},
+	external: ['mapbox-gl'],
+	plugins: [
+		resolve(),
+		commonjs(),
+		json()
+	]
+}];
