@@ -219,14 +219,15 @@ function loadTile(tile, callback) {
     this.constructor.prototype.loadTile.call(this, tile, err => {
         const texture = tile.texture;
         const layer = this._parentLayer;
+        const tileDict = this._tileDict;
 
-        if (texture && !layer._tileDict[position]) {
+        if (texture && layer && !tileDict[position]) {
             const gl = this.map.painter.context.gl;
             const fb = gl.createFramebuffer();
             const [width, height] = texture.size;
             const pixels = new Uint8Array(width * height * 4);
-            const dbz = tile.dbz = new Uint32Array(width * height);
-            const mercatorBounds = tile.mercatorBounds = getMercatorBounds(tile.tileID.canonical);
+            const dbz = tile._dbz = new Uint32Array(width * height);
+            const mercatorBounds = tile._mercatorBounds = getMercatorBounds(tile.tileID.canonical);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0);
@@ -253,16 +254,16 @@ function loadTile(tile, callback) {
             const group = layer._zoomGroups[z - 1];
             const boxMesh = createBoxMesh(z, mercatorBounds, dbz, layer._scaleColors);
             if (boxMesh) {
-                boxMesh.name = position;
+                tile._boxMesh = boxMesh;
                 group.add(boxMesh);
             }
             const rainMesh = createRainMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._rainMaterial);
             if (rainMesh) {
-                rainMesh.name = position;
+                tile._rainMesh = rainMesh;
                 group.add(rainMesh);
             }
 
-            layer._tileDict[position] = tile;
+            tileDict[position] = tile;
         }
         callback(err);
     });
@@ -273,21 +274,23 @@ function unloadTile(tile, callback) {
     const position = `${z}/${x}/${y}`;
 
     this.constructor.prototype.unloadTile.call(this, tile, err => {
-        const layer = this._parentLayer;
+        const boxMesh = tile._boxMesh;
+        const rainMesh = tile._rainMesh;
 
-        if (layer._tileDict[position]) {
-            const group = layer._zoomGroups[z - 1];
-
-            for (let i = 0; i < 2; i++) {
-                const mesh = group.getObjectByName(position);
-                if (mesh) {
-                    group.remove(mesh);
-                    disposeMesh(mesh);
-                }
-            }
-
-            delete layer._tileDict[position];
+        if (boxMesh) {
+            boxMesh.parent.remove(boxMesh);
+            disposeMesh(boxMesh);
+            delete tile._boxMesh;
         }
+
+        if (rainMesh) {
+            rainMesh.parent.remove(rainMesh);
+            disposeMesh(rainMesh);
+            delete tile._rainMesh;
+        }
+
+        delete this._tileDict[position];
+
         callback(err);
     });
 }
@@ -387,6 +390,7 @@ export default class RainLayer extends Evented {
         delete this._renderer;
 
         this._map.off('zoom', this._onZoom);
+        this._removeSource();
         delete this._map;
 
         clearInterval(this._timer);
@@ -412,18 +416,15 @@ export default class RainLayer extends Evented {
     }
 
     _refreshSource() {
-        const source = this.source;
-        const {tiles, tileSize, minzoom, maxzoom, attribution, catalog, timestamp} = sources[source];
+        const sourceId = this.source;
+        const {tiles, tileSize, minzoom, maxzoom, attribution, catalog, timestamp} = sources[sourceId];
 
         fetch(catalog).then(response => response.json()).then(data => {
             const map = this._map;
 
-            if (map.getSource(source)) {
-                map.removeLayer(source);
-                map.removeSource(source);
-            }
-            this._tileDict = {};
-            map.addSource(source, {
+            this._removeSource();
+
+            map.addSource(sourceId, {
                 type: 'raster',
                 tiles: tiles.map(tile => format(tile, data)),
                 tileSize,
@@ -431,17 +432,35 @@ export default class RainLayer extends Evented {
                 maxzoom,
                 attribution
             });
-            map.getSource(source)._parentLayer = this;
-            map.getSource(source).loadTile = loadTile;
-            map.getSource(source).unloadTile = unloadTile;
+
+            const source = map.getSource(sourceId);
+
+            source._parentLayer = this;
+            source._tileDict = {};
+            source.loadTile = loadTile;
+            source.unloadTile = unloadTile;
+
             map.addLayer({
-                id: source,
+                id: sourceId,
                 type: 'raster',
-                source,
+                source: sourceId,
                 paint: {'raster-opacity': 0}
             }, this.id);
+
             this.fire({type: 'refresh', timestamp: +format(timestamp, data)});
         });
+    }
+
+    _removeSource() {
+        const sourceId = this.source;
+        const map = this._map;
+        const source = map.getSource(sourceId);
+
+        if (source) {
+            map.removeLayer(sourceId);
+            map.removeSource(sourceId);
+            delete source._parentLayer;
+        }
     }
 
     getLegendHTML() {
