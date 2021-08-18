@@ -107,9 +107,9 @@
         136,
         35.6814
     ],
-    "zoom": 4,
+    "zoom": 2,
     "bearing": 0,
-    "pitch": 0,
+    "pitch": 45,
     "sources": {
         "mapbox://mapbox.satellite": {
             "url": "mapbox://mapbox.satellite",
