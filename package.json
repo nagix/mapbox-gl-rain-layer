@@ -1,6 +1,6 @@
 {
   "name": "mapbox-gl-rain-layer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mapbox GL Rain Layer",
   "main": "dist/mapbox-gl-rain-layer.js",
   "module": "dist/mapbox-gl-rain-layer.esm.js",

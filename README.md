@@ -21,7 +21,7 @@ npm install mapbox-gl-rain-layer --save
 To use CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/mapbox-gl-rain-layer@latest/dist/mapbox-gl-rain-layer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mapbox-gl-rain-layer@latest"></script>
 ```
 
 ## Usage
