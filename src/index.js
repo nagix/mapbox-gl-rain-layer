@@ -9,11 +9,6 @@ const RESOLUTION_Y = 64;
 const boxGeometry = new BoxBufferGeometry(1, -1, 1);
 boxGeometry.translate(0.5, 0.5, 0.5);
 
-const precipitationMaterial = new MeshLambertMaterial({
-    opacity: 0.1,
-    transparent: true
-});
-
 const rainVertexBuffer = new Float32Array([
     // Front
     -0.002, 0.002, 0.01,
@@ -65,6 +60,10 @@ const rainFragmentShader = `
     }
 `;
 
+function valueOrDefault(value, defaultValue) {
+    return value === undefined ? defaultValue : value;
+}
+
 function resolve(object, key) {
     let first = key.split(/\.|(?=\[)/)[0];
     const rest = key.slice(first.length).replace(/^\./, '');
@@ -105,7 +104,7 @@ function getMercatorBounds(canonical) {
     return {x: coord1.x, y: coord1.y, dx: coord2.x - coord1.x, dy: coord2.y - coord1.y};
 }
 
-function createBoxMesh(z, mercatorBounds, dbz, scaleColors) {
+function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
     const factor = 1 / Math.pow(2, (z - 1) / 3);
     const resolutionX = Math.floor(RESOLUTION_X * factor);
     const resolutionY = Math.floor(RESOLUTION_Y * factor);
@@ -129,7 +128,7 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors) {
         return;
     }
 
-    const mesh = new InstancedMesh(boxGeometry, precipitationMaterial, instances.length);
+    const mesh = new InstancedMesh(boxGeometry, material, instances.length);
     for (let i = 0; i < instances.length; i++) {
         const {x, y, p} = instances[i];
         const matrix = new Matrix4()
@@ -253,7 +252,7 @@ function loadTile(tile, callback) {
             }
 
             const group = layer._zoomGroups[z - 1];
-            const boxMesh = createBoxMesh(z, mercatorBounds, dbz, layer._scaleColors);
+            const boxMesh = createBoxMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._meshMaterial);
             if (boxMesh) {
                 tile._boxMesh = boxMesh;
                 group.add(boxMesh);
@@ -308,6 +307,7 @@ export default class RainLayer extends Evented {
         this.maxzoom = options.maxzoom;
         this.source = options.source || 'rainviewer';
         this.scale = options.scale || 'noaa';
+        this.meshOpacity = valueOrDefault(options.meshOpacity, 0.1);
         this._interval = sources[this.source].interval;
         this._colors = sources[this.source].colors;
         this._onZoom = this._onZoom.bind(this);
@@ -323,6 +323,11 @@ export default class RainLayer extends Evented {
 
         this._ambientLight = new AmbientLight(0xffffff, .4);
         this._scene.add(this._ambientLight);
+
+        this._meshMaterial = new MeshLambertMaterial({
+            opacity: this.meshOpacity,
+            transparent: true
+        });
 
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
@@ -375,6 +380,9 @@ export default class RainLayer extends Evented {
         this._scene.remove(this._ambientLight);
         this._ambientLight.dispose();
         delete this._ambientLight;
+
+        this._meshMaterial.dispose();
+        delete this._meshMaterial;
 
         this._rainMaterial.dispose();
         delete this._rainMaterial;
