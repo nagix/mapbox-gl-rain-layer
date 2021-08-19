@@ -213,10 +213,9 @@ function disposeMesh(mesh) {
 }
 
 function loadTile(tile, callback) {
-    const {x, y, z} = tile.tileID.canonical;
-    const position = `${z}/${x}/${y}`;
-
     this.constructor.prototype.loadTile.call(this, tile, err => {
+        const {x, y, z} = tile.tileID.canonical;
+        const position = `${z}/${x}/${y}`;
         const texture = tile.texture;
         const layer = this._parentLayer;
         const tileDict = this._tileDict;
@@ -226,16 +225,18 @@ function loadTile(tile, callback) {
             const fb = gl.createFramebuffer();
             const [width, height] = texture.size;
             const pixels = new Uint8Array(width * height * 4);
-            const dbz = tile._dbz = new Uint32Array(width * height);
+            const dbz = tile._dbz = new Uint8Array(width * height);
             const mercatorBounds = tile._mercatorBounds = getMercatorBounds(tile.tileID.canonical);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0);
             gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.deleteFramebuffer(fb);
 
-            if (layer.source.colors) {
-                const colors = layer.source.colors.map(color => parseInt(color.replace('#', '0x'), 16));
+            if (layer._colors) {
+                // Index scale will be supported in the next minor version
+                const colors = layer._colors.map(color => parseInt(color.replace('#', '0x'), 16));
                 for (let i = 0; i < dbz.length; i++) {
                     const color = ((pixels[i * 4] * 256) + pixels[i * 4 + 1]) * 256 + pixels[i * 4 + 2];
                     for (let j = 0; j < colors.length; j++) {
@@ -265,15 +266,15 @@ function loadTile(tile, callback) {
 
             tileDict[position] = tile;
         }
+
         callback(err);
     });
 }
 
 function unloadTile(tile, callback) {
-    const {x, y, z} = tile.tileID.canonical;
-    const position = `${z}/${x}/${y}`;
-
     this.constructor.prototype.unloadTile.call(this, tile, err => {
+        const {x, y, z} = tile.tileID.canonical;
+        const position = `${z}/${x}/${y}`;
         const boxMesh = tile._boxMesh;
         const rainMesh = tile._rainMesh;
 
