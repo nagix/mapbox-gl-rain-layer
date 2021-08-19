@@ -304,6 +304,8 @@ export default class RainLayer extends Evented {
         this.id = options.id;
         this.type = 'custom';
         this.renderingMode = '3d';
+        this.minzoom = options.minzoom;
+        this.maxzoom = options.maxzoom;
         this.source = options.source || 'rainviewer';
         this.scale = options.scale || 'noaa';
         this._interval = sources[this.source].interval;
@@ -350,6 +352,7 @@ export default class RainLayer extends Evented {
         });
 
         this._map = map;
+        this._map.setLayerZoomRange(this.id, this.minzoom, this.maxzoom);
         this._map.on('zoom', this._onZoom);
 
         this._renderer = new WebGLRenderer({
