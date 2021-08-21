@@ -1,5 +1,5 @@
 import {Evented, MercatorCoordinate} from 'mapbox-gl';
-import {AmbientLight, BoxBufferGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, DynamicDrawUsage, Group, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, InterleavedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, WebGLRenderer} from 'three';
+import {AmbientLight, BoxBufferGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, DynamicDrawUsage, Group, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, InterleavedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
 import scales from './scales.json';
 import sources from './sources.json';
 
@@ -53,10 +53,10 @@ const rainVertexShader = `
 
 const rainFragmentShader = `
     precision highp float;
-    uniform float time;
+    uniform vec4 color;
 
     void main(void) {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        gl_FragColor = color;
     }
 `;
 
@@ -144,6 +144,7 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
     mesh.scale.z = Math.pow(2, Math.max(0, 10 - z)) * 0.0002;
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
+    mesh.renderOrder = 1;
     return mesh;
 }
 
@@ -307,6 +308,7 @@ export default class RainLayer extends Evented {
         this.maxzoom = options.maxzoom;
         this.source = options.source || 'rainviewer';
         this.scale = options.scale || 'noaa';
+        this.rainColor = options.rainColor || '#fff';
         this.meshOpacity = valueOrDefault(options.meshOpacity, 0.1);
         this._interval = sources[this.source].interval;
         this._colors = sources[this.source].colors;
@@ -314,6 +316,8 @@ export default class RainLayer extends Evented {
     }
 
     onAdd(map, gl) {
+        const parseColor = map.painter.context.clearColor.default.constructor.parse;
+
         this._scene = new Scene();
         this._camera = new Camera();
 
@@ -326,16 +330,19 @@ export default class RainLayer extends Evented {
 
         this._meshMaterial = new MeshLambertMaterial({
             opacity: this.meshOpacity,
-            transparent: true
+            transparent: this.meshOpacity < 1
         });
 
+        const {r, g, b, a} = parseColor(this.rainColor);
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
-                scale: {type: 'f', value: 1.0}
+                scale: {type: 'f', value: 1.0},
+                color: {type: 'v4', value: new Vector4(r, g, b, a)}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
+            transparent: a < 1,
             side: DoubleSide
         });
 
