@@ -8,7 +8,7 @@ See a [Live Demo](https://nagix.github.io/mapbox-gl-rain-layer).
 
 The rain animation is up to date according to the current radar data from data sources. In addition to the density of raindrops, the colors of semi-transparent boxes indicate the intensity of rainfall.
 
-Version 0.1 requires Mapbox GL JS 0.54.0 or later. This component works on [browsers that support ES6](https://caniuse.com/es6).
+Version 0.2 requires Mapbox GL JS 0.54.0 or later. This component works on [browsers that support ES6](https://caniuse.com/es6).
 
 ## Installation
 
@@ -69,8 +69,12 @@ You can find an interactive demo at [nagix.github.io/mapbox-gl-rain-layer](https
 | Name | Type | Default | Description
 | ---- | ---- | ------- | -----------
 | **`options.id`** | `string` | | A unique identifier that you define.
-| **`options.source`** | `string` | `'rainviewer'` | The data source for the layer. Currently, only `'rainviewer'` is supported.
+| **`options.maxzoom`** | `number` | | The maximum zoom level for the layer. At zoom levels equal to or greater than the maxzoom, the layer will be hidden. The value can be any number between `0` and `24` (inclusive). If no maxzoom is provided, the layer will be visible at all zoom levels for which there are tiles available.
+| **`options.meshOpacity`** | `number` | `0.1` | The opacity of mesh boxes. The value can be any number between `0` and `1` (inclusive).
+| **`options.minzoom`** | `number` | | The minimum zoom level for the layer. At zoom levels less than the minzoom, the layer will be hidden. The value can be any number between `0` and `24` (inclusive). If no minzoom is provided, the layer will be visible at all zoom levels for which there are tiles available.
+| **`options.rainColor`** | `string` | `'#fff'` | The color of raindrops. This color can be specified as `rgba` with an alpha component. The default is white.
 | **`options.scale`** | `string` | `'noaa'` | The type of the color scale for the radar/precipitation data. Currently, only `'noaa'` is supported. See [Radar Images: Reflectivity](https://www.weather.gov/jetstream/refl) by National Weather Service for details.
+| **`options.source`** | `string` | `'rainviewer'` | The data source for the layer. Currently, only `'rainviewer'` is supported.
 
 ## Building
 
