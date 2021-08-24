@@ -316,7 +316,7 @@ export default class RainLayer extends Evented {
     }
 
     onAdd(map, gl) {
-        const parseColor = map.painter.context.clearColor.default.constructor.parse;
+        this._parseColor = map.painter.context.clearColor.default.constructor.parse;
 
         this._scene = new Scene();
         this._camera = new Camera();
@@ -333,7 +333,7 @@ export default class RainLayer extends Evented {
             transparent: this.meshOpacity < 1
         });
 
-        const {r, g, b, a} = parseColor(this.rainColor);
+        const {r, g, b, a} = this._parseColor(this.rainColor);
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
@@ -380,6 +380,8 @@ export default class RainLayer extends Evented {
     }
 
     onRemove() {
+        delete this._parseColor;
+
         this._scene.remove(this._directionalLight);
         this._directionalLight.dispose();
         delete this._directionalLight;
@@ -480,6 +482,26 @@ export default class RainLayer extends Evented {
             map.removeSource(sourceId);
             delete source._parentLayer;
         }
+    }
+
+    setRainColor(rainColor) {
+        this.rainColor = rainColor || '#fff';
+        if (this._parseColor && this._rainMaterial) {
+            const {r, g, b, a} = this._parseColor(this.rainColor);
+            this._rainMaterial.uniforms.color.value = new Vector4(r, g, b, a);
+            this._rainMaterial.transparent = a < 1;
+
+        }
+        return this;
+    }
+
+    setMeshOpacity(meshOpacity) {
+        this.meshOpacity = valueOrDefault(meshOpacity, 0.1);
+        if (this._meshMaterial) {
+            this._meshMaterial.opacity = meshOpacity;
+            this._meshMaterial.transparent = meshOpacity < 1;
+        }
+        return this;
     }
 
     getLegendHTML() {
