@@ -1,6 +1,6 @@
 {
   "name": "mapbox-gl-rain-layer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Mapbox GL Rain Layer",
   "main": "dist/mapbox-gl-rain-layer.js",
   "module": "dist/mapbox-gl-rain-layer.esm.js",
@@ -17,7 +17,7 @@
     "eslint-plugin-import": "^2.24.1",
     "eslint-plugin-jsdoc": "^36.0.7",
     "mapbox-gl": "^2.4.1",
-    "rollup": "^2.56.2",
+    "rollup": "^2.56.3",
     "rollup-plugin-terser": "^7.0.2"
   },
   "peerDependencies": {
