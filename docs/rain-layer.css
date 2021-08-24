@@ -31,6 +31,78 @@ html, body {
 #last-updated {
     color: #999;
 } 
+#map-styles-bg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);;
+    display: none;
+    z-index: 99;
+}
+#map-styles {
+    position: absolute;
+    top: 24px;
+    right: 50px;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+#map-styles div {
+    font: 14px/26px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    padding: 6px 10px;
+    background-color: transparent;
+    cursor: pointer;
+}
+#map-styles div+div {
+    border-top: 1px solid #ddd;
+}
+#map-styles div:hover {
+    background-color: rgba(0, 0, 0, .05);
+}
+#map-styles div:first-child {
+    border-radius: 4px 4px 0 0;
+}
+#map-styles div:last-child {
+    border-radius: 0 0 4px 4px;
+}
+#map-styles span {
+    display: inline-block;
+    width: 16px;
+}
+#map-styles div.active span::after {
+    content: "\2714";
+}
+#rain-bg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;;
+    display: none;
+    z-index: 99;
+}
+#rain {
+    position: absolute;
+    top: 44px;
+    right: 50px;
+    padding: 10px;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+#rain hr {
+    margin: 10px 0;
+}
+#slider {
+    width: 100%;
+    cursor: grab;
+}
+#slider:active {
+    cursor: grabbing;
+}
 #info-bg {
     position: absolute;
     top: 0;
@@ -43,7 +115,7 @@ html, body {
 }
 #info {
     position: absolute;
-    top: 80px;
+    top: 110px;
     right: 50px;
     width: 250px;
     padding: 10px;
@@ -60,6 +132,12 @@ html, body {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     border-radius: 4px;
     z-index: 1;
+}
+.mapboxgl-ctrl button.mapboxgl-ctrl-map .mapboxgl-ctrl-icon {
+    background: no-repeat center/22px url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%23333' d='M0 117.66v346.32c0 11.32 11.43 19.06 21.94 14.86L160 416V32L20.12 87.95A32.006 32.006 0 0 0 0 117.66zM192 416l192 64V96L192 32v384zM554.06 33.16L416 96v384l139.88-55.95A31.996 31.996 0 0 0 576 394.34V48.02c0-11.32-11.43-19.06-21.94-14.86z'%3E%3C/path%3E%3C/svg%3E");
+}
+.mapboxgl-ctrl button.mapboxgl-ctrl-rain .mapboxgl-ctrl-icon {
+    background: no-repeat center/22px url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23333' d='M183.9 370.1c-7.6-4.4-17.4-1.8-21.8 6l-64 112c-4.4 7.7-1.7 17.5 6 21.8 2.5 1.4 5.2 2.1 7.9 2.1 5.5 0 10.9-2.9 13.9-8.1l64-112c4.4-7.6 1.7-17.4-6-21.8zm96 0c-7.6-4.4-17.4-1.8-21.8 6l-64 112c-4.4 7.7-1.7 17.5 6 21.8 2.5 1.4 5.2 2.1 7.9 2.1 5.5 0 10.9-2.9 13.9-8.1l64-112c4.4-7.6 1.7-17.4-6-21.8zm-192 0c-7.6-4.4-17.4-1.8-21.8 6l-64 112c-4.4 7.7-1.7 17.5 6 21.8 2.5 1.4 5.2 2.1 7.9 2.1 5.5 0 10.9-2.9 13.9-8.1l64-112c4.4-7.6 1.7-17.4-6-21.8zm384 0c-7.6-4.4-17.4-1.8-21.8 6l-64 112c-4.4 7.7-1.7 17.5 6 21.8 2.5 1.4 5.2 2.1 7.9 2.1 5.5 0 10.9-2.9 13.9-8.1l64-112c4.4-7.6 1.7-17.4-6-21.8zm-96 0c-7.6-4.4-17.4-1.8-21.8 6l-64 112c-4.4 7.7-1.7 17.5 6 21.8 2.5 1.4 5.2 2.1 7.9 2.1 5.5 0 10.9-2.9 13.9-8.1l64-112c4.4-7.6 1.7-17.4-6-21.8zM416 128c-.6 0-1.1.2-1.6.2 1.1-5.2 1.6-10.6 1.6-16.2 0-44.2-35.8-80-80-80-24.6 0-46.3 11.3-61 28.8C256.4 24.8 219.3 0 176 0 114.2 0 64 50.1 64 112c0 7.3.8 14.3 2.1 21.2C27.8 145.8 0 181.5 0 224c0 53 43 96 96 96h320c53 0 96-43 96-96s-43-96-96-96z'%3E%3C/path%3E%3C/svg%3E");
 }
 .mapboxgl-ctrl button.mapboxgl-ctrl-info .mapboxgl-ctrl-icon {
     background: no-repeat center/22px url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23333' d='M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z'%3E%3C/path%3E%3C/svg%3E");
