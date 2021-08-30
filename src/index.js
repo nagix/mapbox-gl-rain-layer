@@ -1,5 +1,5 @@
 import {Evented, MercatorCoordinate} from 'mapbox-gl';
-import {AmbientLight, BoxBufferGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, DynamicDrawUsage, Group, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, InterleavedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
+import {AmbientLight, BoxBufferGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, Group, InstancedBufferGeometry, InstancedMesh, InstancedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
 import scales from './scales.json';
 import sources from './sources.json';
 
@@ -170,15 +170,14 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
     }
 
     const instancedBufferGeometry = new InstancedBufferGeometry();
-    const instancedBuffer = new InstancedInterleavedBuffer(
-        new Float32Array(instances.length * 3), 3, 1
-    ).setUsage(DynamicDrawUsage);
 
     const positions = new BufferAttribute(rainVertexBuffer, 3);
     instancedBufferGeometry.setAttribute('position', positions);
+
     instancedBufferGeometry.setIndex(new BufferAttribute(rainIndices, 1));
 
-    const offsets = new InterleavedBufferAttribute(instancedBuffer, 3, 0);
+    const rainOffsetBuffer = new Float32Array(instances.length * 3);
+    const offsets = new InstancedBufferAttribute(rainOffsetBuffer, 3);
     for (let i = 0; i < instances.length; i++) {
         const {x, y} = instances[i];
         offsets.setXYZ(
@@ -188,7 +187,6 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
             Math.random()
         );
     }
-
     instancedBufferGeometry.setAttribute('offset', offsets);
 
     const mesh = new Mesh(instancedBufferGeometry, material);
