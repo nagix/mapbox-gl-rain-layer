@@ -308,6 +308,7 @@ export default class RainLayer extends Evented {
         this.scale = options.scale || 'noaa';
         this.rainColor = options.rainColor || '#fff';
         this.meshOpacity = valueOrDefault(options.meshOpacity, 0.1);
+        this.repaint = valueOrDefault(options.repaint, true);
         this._interval = sources[this.source].interval;
         this._colors = sources[this.source].colors;
         this._onZoom = this._onZoom.bind(this);
@@ -424,7 +425,9 @@ export default class RainLayer extends Evented {
         this._camera.projectionMatrix = new Matrix4().fromArray(matrix);
         this._renderer.resetState();
         this._renderer.render(this._scene, this._camera);
-        this._map.triggerRepaint();
+        if (this.repaint) {
+            this._map.triggerRepaint();
+        }
     }
 
     _onZoom() {
