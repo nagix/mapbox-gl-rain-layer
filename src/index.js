@@ -1,12 +1,12 @@
 import {Evented, MercatorCoordinate} from 'mapbox-gl';
-import {AmbientLight, BoxBufferGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, Group, InstancedBufferGeometry, InstancedMesh, InstancedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
+import {AmbientLight, BoxGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, Group, InstancedBufferGeometry, InstancedMesh, InstancedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
 import scales from './scales.json';
 import sources from './sources.json';
 
 const RESOLUTION_X = 64;
 const RESOLUTION_Y = 64;
 
-const boxGeometry = new BoxBufferGeometry(1, -1, 1);
+const boxGeometry = new BoxGeometry(1, -1, 1);
 boxGeometry.translate(0.5, 0.5, 0.5);
 
 const rainVertexBuffer = new Float32Array([
