@@ -141,7 +141,7 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
     mesh.position.y = mercatorBounds.y;
     mesh.scale.x = mercatorBounds.dx;
     mesh.scale.y = mercatorBounds.dy;
-    mesh.scale.z = Math.pow(2, Math.max(0, 10 - z)) * 0.0002;
+    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : (14 - z) * 0.8) * 0.0002;
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
     mesh.renderOrder = 1;
@@ -159,7 +159,7 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
         for (let x = 0; x < resolutionX; x++) {
             const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)];
             if (level >= threshold) {
-                for (let i = 0; i < Math.pow(2, (level - threshold) / 10); i++) {
+                for (let i = 0; i < Math.pow(2, (level - threshold) / 10) * Math.max(1, z - 14); i++) {
                     instances.push({x, y});
                 }
             }
@@ -194,7 +194,7 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
     mesh.position.y = mercatorBounds.y;
     mesh.scale.x = mercatorBounds.dx;
     mesh.scale.y = mercatorBounds.dy;
-    mesh.scale.z = Math.pow(2, Math.max(0, 10 - z)) * 0.0002;
+    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : (14 - z) * 0.8) * 0.0002;
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
     mesh.frustumCulled = false;
