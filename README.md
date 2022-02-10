@@ -8,7 +8,7 @@ See a [Live Demo](https://nagix.github.io/mapbox-gl-rain-layer).
 
 The rain animation is up to date according to the current radar data from data sources. In addition to the density of raindrops, the colors of semi-transparent boxes indicate the intensity of rainfall.
 
-Version 0.4 requires Mapbox GL JS 0.54.0 or later. This component works on [browsers that support ES6](https://caniuse.com/es6).
+Version 0.5 requires Mapbox GL JS 0.54.0 or later. This component works on [browsers that support ES6](https://caniuse.com/es6).
 
 ## Installation
 

@@ -21,11 +21,11 @@
     <meta property="og:image" content="https://nagix.github.io/mapbox-gl-rain-layer/screenshot1.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@nagix" />
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
     <link href="rain-layer.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/monolith.min.css" rel="stylesheet">
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-rain-layer@0.4.0/dist/mapbox-gl-rain-layer.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl-rain-layer@0.5.0/dist/mapbox-gl-rain-layer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/suncalc@1.8.0/suncalc.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 </head>
@@ -49,8 +49,16 @@
         </div>
         <div id="rain-bg">
             <div id="rain">
-                <div>Rain Color</div>
-                <div id="picker"></div>
+                <div id="color-select">
+                    <div id="rain-color-button" class="active">Rain Color</div>
+                    <div id="snow-color-button">Snow Color</div>
+                </div>
+                <div id="rain-color-picker" class="active">
+                    <div id="rain-color-picker-inner" ></div>
+                </div>
+                <div id="snow-color-picker">
+                    <div id="snow-color-picker-inner"></div>
+                </div>
                 <hr>
                 <div>Mesh Opacity: <span id="mesh-opacity">0.1</span></div>
                 <div>
@@ -131,6 +139,10 @@
         const mapStyleBg = document.getElementById('map-styles-bg');
         const rainBg = document.getElementById('rain-bg');
         const rain = document.getElementById('rain');
+        const rainColorButton = document.getElementById('rain-color-button');
+        const snowColorButton = document.getElementById('snow-color-button');
+        const rainColorPicker = document.getElementById('rain-color-picker');
+        const snowColorPicker = document.getElementById('snow-color-picker');
         const slider = document.getElementById('slider');
         const infoBg = document.getElementById('info-bg');
         const info = document.getElementById('info');
@@ -172,7 +184,7 @@
         for (const style of ['terrain', 'streets-v11', 'outdoors-v11', 'light-v10', 'dark-v10', 'satellite-v9', 'satellite-streets-v11']) {
             const e = document.getElementById(style);
             e.addEventListener('click', function (e) {
-                document.querySelector('.active').classList.remove('active');
+                document.querySelector('#map-styles .active').classList.remove('active');
                 e.target.classList.add('active');
                 mapStyleBg.style.display = 'none';
                 map.removeLayer('rain');
@@ -187,14 +199,47 @@
         }
 
         rainBg.addEventListener('click', () => {
-            pickr.applyColor();
+            rainPickr.applyColor();
+            snowPickr.applyColor();
             rainBg.style.display = 'none';
         });
         rain.addEventListener('click', e => {
             e.stopPropagation();
         });
-        const pickr = Pickr.create({
-            el: '#picker',
+        rainColorButton.addEventListener('click', e => {
+            rainColorButton.classList.add('active');
+            snowColorButton.classList.remove('active');
+            rainColorPicker.classList.add('active');
+            snowColorPicker.classList.remove('active');
+        });
+        snowColorButton.addEventListener('click', e => {
+            snowColorButton.classList.add('active');
+            rainColorButton.classList.remove('active');
+            snowColorPicker.classList.add('active');
+            rainColorPicker.classList.remove('active');
+        });
+        const rainPickr = Pickr.create({
+            el: '#rain-color-picker-inner',
+            theme: 'monolith',
+            default: '#ccf',
+            useAsButton: true,
+            inline: true,
+            showAlways: true,
+            defaultRepresentation: 'RGBA',
+            components: {
+                preview: true,
+                opacity: true,
+                hue: true,
+                interaction: {
+                    input: true
+                }
+            }
+        });
+        rainPickr.on('change', color => {
+            rainLayer.setRainColor(color.toRGBA().toString(0));
+         });
+        const snowPickr = Pickr.create({
+            el: '#snow-color-picker-inner',
             theme: 'monolith',
             default: '#fff',
             useAsButton: true,
@@ -210,8 +255,8 @@
                 }
             }
         });
-        pickr.on('change', color => {
-            rainLayer.setRainColor(color.toRGBA().toString(0));
+        snowPickr.on('change', color => {
+            rainLayer.setSnowColor(color.toRGBA().toString(0));
          });
         slider.addEventListener('input', e => {
             const value = e.target.value;
