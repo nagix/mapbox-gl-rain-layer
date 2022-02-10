@@ -74,7 +74,8 @@ You can find an interactive demo at [nagix.github.io/mapbox-gl-rain-layer](https
 | **`options.maxzoom`** | `number` | | The maximum zoom level for the layer. At zoom levels equal to or greater than the maxzoom, the layer will be hidden. The value can be any number between `0` and `24` (inclusive). If no maxzoom is provided, the layer will be visible at all zoom levels for which there are tiles available.
 | **`options.meshOpacity`** | `number` | `0.1` | The opacity of mesh boxes. The value can be any number between `0` and `1` (inclusive).
 | **`options.minzoom`** | `number` | | The minimum zoom level for the layer. At zoom levels less than the minzoom, the layer will be hidden. The value can be any number between `0` and `24` (inclusive). If no minzoom is provided, the layer will be visible at all zoom levels for which there are tiles available.
-| **`options.rainColor`** | `string` | `'#fff'` | The color of raindrops. Colors are strings in a variety of permitted formats: HTML-style hex values, RGB, RGBA, HSL and HSLA. Predefined HTML colors names, like `yellow` and `blue`, are also permitted. The default is white.
+| **`options.rainColor`** | `string` | `'#ccf'` | The color of raindrops. Colors are strings in a variety of permitted formats: HTML-style hex values, RGB, RGBA, HSL and HSLA. Predefined HTML colors names, like `yellow` and `blue`, are also permitted. The default is light blue.
+| **`options.snowColor`** | `string` | `'#fff'` | The color of snowflakes. Colors are strings in a variety of permitted formats: HTML-style hex values, RGB, RGBA, HSL and HSLA. Predefined HTML colors names, like `yellow` and `blue`, are also permitted. The default is white.
 | **`options.repaint`** | `boolean` | `true` | If true, rendering is automatically triggered for every frame. If false, `Map#triggerRepaint()` needs to be called explicitly.
 | **`options.scale`** | `string` | `'noaa'` | The type of the color scale for the radar/precipitation data. Currently, only `'noaa'` is supported. See [Radar Images: Reflectivity](https://www.weather.gov/jetstream/refl) by National Weather Service for details.
 | **`options.source`** | `string` | `'rainviewer'` | The data source for the layer. Currently, only `'rainviewer'` is supported.
@@ -150,6 +151,18 @@ Sets the color of raindrops.
 ##### Parameters
 
 **`color`** (`string`) The color of raindrops. Colors are strings in a variety of permitted formats: HTML-style hex values, RGB, RGBA, HSL and HSLA. Predefined HTML colors names, like `yellow` and `blue`, are also permitted.
+
+##### Returns
+
+`RainLayer`: `this`
+
+#### **`setSnowColor(color)`**
+
+Sets the color of snowflakes.
+
+##### Parameters
+
+**`color`** (`string`) The color of snowflakes. Colors are strings in a variety of permitted formats: HTML-style hex values, RGB, RGBA, HSL and HSLA. Predefined HTML colors names, like `yellow` and `blue`, are also permitted.
 
 ##### Returns
 
