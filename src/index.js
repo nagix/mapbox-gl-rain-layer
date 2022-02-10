@@ -36,6 +36,33 @@ const rainIndices = new Uint16Array([
     10, 9, 11
 ]);
 
+const snowVertexBuffer = new Float32Array([
+    // Front
+    -0.004, 0.004, 0.001,
+    0.004, 0.004, 0.001,
+    -0.004, 0.004, -0.001,
+    0.004, 0.004, -0.001,
+    // Left
+    -0.004, -0.004, 0.001,
+    -0.004, 0.004, 0.001,
+    -0.004, -0.004, -0.001,
+    -0.004, 0.004, -0.001,
+    // Top
+    -0.004, 0.004, 0.001,
+    0.004, 0.004, 0.001,
+    -0.004, -0.004, 0.001,
+    0.004, -0.004, 0.001
+]);
+
+const snowIndices = new Uint16Array([
+    0, 1, 2,
+    2, 1, 3,
+    4, 5, 6,
+    6, 5, 7,
+    8, 9, 10,
+    10, 9, 11
+]);
+
 const rainVertexShader = `
     precision highp float;
     uniform mat4 modelViewMatrix;
@@ -113,7 +140,7 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
 
     for (let y = 0; y < resolutionY; y++) {
         for (let x = 0; x < resolutionX; x++) {
-            const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)];
+            const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)] & 127;
             if (level >= threshold) {
                 for (let p = 1; p < scaleColors.length; p++) {
                     if (level < scaleColors[p][0]) {
@@ -148,7 +175,7 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
     return mesh;
 }
 
-function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
+function createRainMesh(z, mercatorBounds, dbz, scaleColors, material, snow) {
     const factor = 1 / Math.pow(2, (z - 1) / 3);
     const resolutionX = Math.floor(RESOLUTION_X * factor);
     const resolutionY = Math.floor(RESOLUTION_Y * factor);
@@ -158,8 +185,8 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
     for (let y = 0; y < resolutionY; y++) {
         for (let x = 0; x < resolutionX; x++) {
             const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)];
-            if (level >= threshold) {
-                for (let i = 0; i < Math.pow(2, (level - threshold) / 10) * Math.max(1, z - 14); i++) {
+            if (!snow === !(level & 128) && (level & 127) >= threshold) {
+                for (let i = 0; i < Math.pow(2, ((level & 127) - threshold) / 10) * Math.max(1, z - 14); i++) {
                     instances.push({x, y});
                 }
             }
@@ -171,10 +198,10 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material) {
 
     const instancedBufferGeometry = new InstancedBufferGeometry();
 
-    const positions = new BufferAttribute(rainVertexBuffer, 3);
+    const positions = new BufferAttribute(snow ? snowVertexBuffer : rainVertexBuffer, 3);
     instancedBufferGeometry.setAttribute('position', positions);
 
-    instancedBufferGeometry.setIndex(new BufferAttribute(rainIndices, 1));
+    instancedBufferGeometry.setIndex(new BufferAttribute(snow ? snowIndices : rainIndices, 1));
 
     const rainOffsetBuffer = new Float32Array(instances.length * 3);
     const offsets = new InstancedBufferAttribute(rainOffsetBuffer, 3);
@@ -246,7 +273,7 @@ function loadTile(tile, callback) {
                 }
             } else {
                 for (let i = 0; i < dbz.length; i++) {
-                    dbz[i] = pixels[i * 4] & 127;
+                    dbz[i] = pixels[i * 4];
                 }
             }
 
@@ -260,6 +287,11 @@ function loadTile(tile, callback) {
             if (rainMesh) {
                 tile._rainMesh = rainMesh;
                 group.add(rainMesh);
+            }
+            const snowMesh = createRainMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._snowMaterial, true);
+            if (snowMesh) {
+                tile._snowMesh = snowMesh;
+                group.add(snowMesh);
             }
 
             tileDict[position] = tile;
@@ -275,6 +307,7 @@ function unloadTile(tile, callback) {
         const position = `${z}/${x}/${y}`;
         const boxMesh = tile._boxMesh;
         const rainMesh = tile._rainMesh;
+        const snowMesh = tile._snowMesh;
 
         if (boxMesh) {
             boxMesh.parent.remove(boxMesh);
@@ -286,6 +319,12 @@ function unloadTile(tile, callback) {
             rainMesh.parent.remove(rainMesh);
             disposeMesh(rainMesh);
             delete tile._rainMesh;
+        }
+
+        if (snowMesh) {
+            snowMesh.parent.remove(snowMesh);
+            disposeMesh(snowMesh);
+            delete tile._snowMesh;
         }
 
         delete this._tileDict[position];
@@ -306,7 +345,8 @@ export default class RainLayer extends Evented {
         this.maxzoom = options.maxzoom;
         this.source = options.source || 'rainviewer';
         this.scale = options.scale || 'noaa';
-        this.rainColor = options.rainColor || '#fff';
+        this.rainColor = options.rainColor || '#ccf';
+        this.snowColor = options.snowColor || '#fff';
         this.meshOpacity = valueOrDefault(options.meshOpacity, 0.1);
         this.repaint = valueOrDefault(options.repaint, true);
         this._interval = sources[this.source].interval;
@@ -332,16 +372,29 @@ export default class RainLayer extends Evented {
             transparent: this.meshOpacity < 1
         });
 
-        const {r, g, b, a} = this._parseColor(this.rainColor);
+        let c = this._parseColor(this.rainColor);
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
                 scale: {type: 'f', value: 1.0},
-                color: {type: 'v4', value: new Vector4(r, g, b, a)}
+                color: {type: 'v4', value: new Vector4(c.r, c.g, c.b, c.a)}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
-            transparent: a < 1,
+            transparent: c.a < 1,
+            side: DoubleSide
+        });
+
+        c = this._parseColor(this.snowColor);
+        this._snowMaterial = new RawShaderMaterial({
+            uniforms: {
+                time: {type: 'f', value: 0.0},
+                scale: {type: 'f', value: 1.0},
+                color: {type: 'v4', value: new Vector4(c.r, c.g, c.b, c.a)}
+            },
+            vertexShader: rainVertexShader,
+            fragmentShader: rainFragmentShader,
+            transparent: c.a < 1,
             side: DoubleSide
         });
 
@@ -422,6 +475,8 @@ export default class RainLayer extends Evented {
 
         this._rainMaterial.uniforms.time.value = performance.now() * 0.0006;
         this._rainMaterial.uniforms.scale.value = Math.pow(2, this._baseZoom - zoom - (zoom >= 10.5 ? 1 : 0));
+        this._snowMaterial.uniforms.time.value = performance.now() * 0.00015;
+        this._snowMaterial.uniforms.scale.value = Math.pow(2, this._baseZoom - zoom - (zoom >= 10.5 ? 1 : 0));
         this._camera.projectionMatrix = new Matrix4().fromArray(matrix);
         this._renderer.resetState();
         this._renderer.render(this._scene, this._camera);
@@ -486,12 +541,23 @@ export default class RainLayer extends Evented {
     }
 
     setRainColor(rainColor) {
-        this.rainColor = rainColor || '#fff';
+        this.rainColor = rainColor || '#ccf';
         if (this._parseColor && this._rainMaterial) {
             const {r, g, b, a} = this._parseColor(this.rainColor);
+
             this._rainMaterial.uniforms.color.value = new Vector4(r, g, b, a);
             this._rainMaterial.transparent = a < 1;
+        }
+        return this;
+    }
 
+    setSnowColor(snowColor) {
+        this.snowColor = snowColor || '#fff';
+        if (this._parseColor && this._snowMaterial) {
+            const {r, g, b, a} = this._parseColor(this.snowColor);
+
+            this._snowMaterial.uniforms.color.value = new Vector4(r, g, b, a);
+            this._snowMaterial.transparent = a < 1;
         }
         return this;
     }
