@@ -329,7 +329,9 @@ function unloadTile(tile, callback) {
 
         delete this._tileDict[position];
 
-        callback(err);
+        if (callback) {
+            callback(err);
+        }
     });
 }
 
