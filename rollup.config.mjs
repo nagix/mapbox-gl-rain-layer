@@ -2,7 +2,7 @@ import fs from 'fs';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import {terser} from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import strip from '@rollup/plugin-strip';
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
@@ -28,7 +28,10 @@ export default [{
 	},
 	external: ['mapbox-gl'],
 	plugins: [
-		resolve(),
+		resolve({
+			browser: true,
+			preferBuiltins: false
+		}),
 		commonjs(),
 		json()
 	]
@@ -47,7 +50,10 @@ export default [{
 	},
 	external: ['mapbox-gl'],
 	plugins: [
-		resolve(),
+		resolve({
+			browser: true,
+			preferBuiltins: false
+		}),
 		commonjs(),
 		json(),
 		terser({
@@ -62,18 +68,17 @@ export default [{
 }, {
 	input: 'src/index.js',
 	output: {
-		name: 'RainLayer',
 		file: pkg.module,
 		format: 'esm',
 		indent: false,
-		banner,
-		globals: {
-			'mapbox-gl': 'mapboxgl'
-		}
+		banner
 	},
 	external: ['mapbox-gl'],
 	plugins: [
-		resolve(),
+		resolve({
+			browser: true,
+			preferBuiltins: false
+		}),
 		commonjs(),
 		json()
 	]
