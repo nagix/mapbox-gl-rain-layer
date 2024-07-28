@@ -9416,6 +9416,15 @@
         "source": "mapbox-terrain-dem-v1",
         "exaggeration": 1.5
     },
+    "lights": [
+        {
+            "id": "flat",
+            "type": "flat",
+            "properties": {
+                "anchor": "map"
+            }
+        }
+    ],
     "created": "2020-11-20T21:12:35.724Z",
     "modified": "2020-11-20T21:18:04.744Z",
     "id": "ckhqrf2tz0dt119ny6azh975y",
