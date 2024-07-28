@@ -343,6 +343,7 @@ export default class RainLayer extends Evented {
         this.id = options.id;
         this.type = 'custom';
         this.renderingMode = '3d';
+        this.slot = options.slot;
         this.minzoom = options.minzoom;
         this.maxzoom = options.maxzoom;
         this.source = options.source || 'rainviewer';
