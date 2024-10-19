@@ -1,24 +1,24 @@
 {
   "name": "mapbox-gl-rain-layer",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Mapbox GL Rain Layer",
   "main": "dist/mapbox-gl-rain-layer.js",
   "module": "dist/mapbox-gl-rain-layer.esm.js",
   "dependencies": {
-    "three": "^0.151.3"
+    "three": "^0.162.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-commonjs": "^28.0.1",
     "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.0.2",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-strip": "^3.0.2",
     "@rollup/plugin-terser": "^0.4.1",
-    "eslint": "^8.57.0",
+    "eslint": "^8.57.1",
     "eslint-config-mourner": "^3.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-jsdoc": "^48.8.3",
-    "mapbox-gl": "^3.5.2",
-    "rollup": "^4.19.1"
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsdoc": "^50.4.3",
+    "mapbox-gl": "^3.7.0",
+    "rollup": "^4.24.0"
   },
   "peerDependencies": {
     "mapbox-gl": ">=0.54.0"
