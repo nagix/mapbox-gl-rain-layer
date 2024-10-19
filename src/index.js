@@ -372,7 +372,8 @@ export default class RainLayer extends Evented {
 
         this._meshMaterial = new MeshLambertMaterial({
             opacity: this.meshOpacity,
-            transparent: this.meshOpacity < 1
+            transparent: this.meshOpacity < 1,
+            visible: this.meshOpacity > 0
         });
 
         let c = this._parseColor(this.rainColor);
@@ -570,6 +571,7 @@ export default class RainLayer extends Evented {
         if (this._meshMaterial) {
             this._meshMaterial.opacity = meshOpacity;
             this._meshMaterial.transparent = meshOpacity < 1;
+            this._meshMaterial.visible = meshOpacity > 0;
         }
         return this;
     }
