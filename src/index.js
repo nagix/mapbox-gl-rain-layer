@@ -1,3 +1,4 @@
+import {parseCSSColor} from 'csscolorparser';
 import {Evented, MercatorCoordinate} from 'mapbox-gl';
 import {AmbientLight, BoxGeometry, BufferAttribute, Camera, Color, DirectionalLight, DoubleSide, Group, InstancedBufferGeometry, InstancedMesh, InstancedBufferAttribute, Matrix4, Mesh, MeshLambertMaterial, RawShaderMaterial, Scene, Vector4, WebGLRenderer} from 'three';
 import scales from './scales.json';
@@ -466,8 +467,6 @@ export default class RainLayer extends Evented {
     }
 
     onAdd(map, gl) {
-        this._parseColor = map.painter.context.clearColor.default.constructor.parse;
-
         this._scene = new Scene();
         this._camera = new Camera();
 
@@ -484,29 +483,29 @@ export default class RainLayer extends Evented {
             visible: this.meshOpacity > 0
         });
 
-        let c = this._parseColor(this.rainColor);
+        let c = parseCSSColor(this.rainColor);
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
                 scale: {type: 'f', value: 1.0},
-                color: {type: 'v4', value: new Vector4(c.r, c.g, c.b, c.a)}
+                color: {type: 'v4', value: new Vector4(c[0], c[1], c[2], c[3])}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
-            transparent: c.a < 1,
+            transparent: c[3] < 1,
             side: DoubleSide
         });
 
-        c = this._parseColor(this.snowColor);
+        c = parseCSSColor(this.snowColor);
         this._snowMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
                 scale: {type: 'f', value: 1.0},
-                color: {type: 'v4', value: new Vector4(c.r, c.g, c.b, c.a)}
+                color: {type: 'v4', value: new Vector4(c[0], c[1], c[2], c[3])}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
-            transparent: c.a < 1,
+            transparent: c[3] < 1,
             side: DoubleSide
         });
 
@@ -544,8 +543,6 @@ export default class RainLayer extends Evented {
     }
 
     onRemove() {
-        delete this._parseColor;
-
         this._scene.remove(this._directionalLight);
         this._directionalLight.dispose();
         delete this._directionalLight;
@@ -682,8 +679,8 @@ export default class RainLayer extends Evented {
 
     setRainColor(rainColor) {
         this.rainColor = rainColor || '#ccf';
-        if (this._parseColor && this._rainMaterial) {
-            const {r, g, b, a} = this._parseColor(this.rainColor);
+        if (this._rainMaterial) {
+            const [r, g, b, a] = parseCSSColor(this.rainColor);
 
             this._rainMaterial.uniforms.color.value = new Vector4(r, g, b, a);
             this._rainMaterial.transparent = a < 1;
@@ -693,8 +690,8 @@ export default class RainLayer extends Evented {
 
     setSnowColor(snowColor) {
         this.snowColor = snowColor || '#fff';
-        if (this._parseColor && this._snowMaterial) {
-            const {r, g, b, a} = this._parseColor(this.snowColor);
+        if (this._snowMaterial) {
+            const [r, g, b, a] = parseCSSColor(this.snowColor);
 
             this._snowMaterial.uniforms.color.value = new Vector4(r, g, b, a);
             this._snowMaterial.transparent = a < 1;
