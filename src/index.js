@@ -410,6 +410,7 @@ function loadParticleTile(tile, callback) {
             group.add(snowMesh);
         }
 
+        tile.state = 'loaded';
         callback(null);
     });
 }
