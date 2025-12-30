@@ -30,7 +30,7 @@
         ],
         "tileSize": 256,
         "minzoom": 1,
-        "maxzoom": 20,
+        "maxzoom": 10,
         "attribution": "<a href=\"https://www.rainviewer.com\">© RainViewer</a>",
         "catalog": "https://api.rainviewer.com/public/weather-maps.json",
         "interval": 600000,

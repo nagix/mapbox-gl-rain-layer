@@ -87,6 +87,23 @@ const rainFragmentShader = `
     }
 `;
 
+function clamp(value, lower, upper) {
+    return Math.min(Math.max(value, lower), upper);
+}
+
+function collect(keys, fn, callback) {
+    const results = [];
+
+    for (const key of keys) {
+        fn(key, result => {
+            results.push(result);
+            if (results.length === keys.length) {
+                callback(results);
+            }
+        });
+    }
+}
+
 function valueOrDefault(value, defaultValue) {
     return value === undefined ? defaultValue : value;
 }
@@ -131,16 +148,44 @@ function getMercatorBounds(canonical) {
     return {x: coord1.x, y: coord1.y, dx: coord2.x - coord1.x, dy: coord2.y - coord1.y};
 }
 
-function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
-    const factor = 1 / Math.pow(2, (z - 1) / 3);
-    const resolutionX = Math.floor(RESOLUTION_X * factor);
-    const resolutionY = Math.floor(RESOLUTION_Y * factor);
+function getImageTileKeys(canonical, minzoom, maxzoom) {
+    const {x, y, z} = canonical;
+    const iz = clamp(z, minzoom, maxzoom);
+    const scale = Math.pow(2, iz - z);
+    const keys = [];
+
+    for (let iy = Math.floor(y * scale); iy < (y + 1) * scale; iy++) {
+        for (let ix = Math.floor(x * scale); ix < (x + 1) * scale; ix++) {
+            keys.push(`${iz}/${ix}/${iy}`);
+        }
+    }
+    return keys;
+}
+
+function getImageTilePosition(canonical, minzoom, maxzoom, u, v) {
+    const {x, y, z} = canonical;
+    const iz = clamp(z, minzoom, maxzoom);
+    const scale = Math.pow(2, iz - z);
+    const fx = (x + u) * scale;
+    const fy = (y + v) * scale;
+    const ix = Math.floor(fx);
+    const iy = Math.floor(fy);
+
+    return {
+        key: `${iz}/${ix}/${iy}`,
+        u: fx - ix,
+        v: fy - iy
+    };
+}
+
+function createBoxMesh(z, mercatorBounds, data, scaleColors, material) {
+    const {dbz, resolutionX, resolutionY} = data;
     const threshold = scaleColors[0][0];
     const instances = [];
 
     for (let y = 0; y < resolutionY; y++) {
         for (let x = 0; x < resolutionX; x++) {
-            const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)] & 127;
+            const level = dbz[y * resolutionX + x] & 127;
             if (level >= threshold) {
                 for (let p = 1; p < scaleColors.length; p++) {
                     if (level < scaleColors[p][0]) {
@@ -168,23 +213,21 @@ function createBoxMesh(z, mercatorBounds, dbz, scaleColors, material) {
     mesh.position.y = mercatorBounds.y;
     mesh.scale.x = mercatorBounds.dx;
     mesh.scale.y = mercatorBounds.dy;
-    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : (14 - z) * 0.8) * 0.0002;
+    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : 14 - z) * 0.0002;
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
     mesh.renderOrder = 1;
     return mesh;
 }
 
-function createRainMesh(z, mercatorBounds, dbz, scaleColors, material, snow) {
-    const factor = 1 / Math.pow(2, (z - 1) / 3);
-    const resolutionX = Math.floor(RESOLUTION_X * factor);
-    const resolutionY = Math.floor(RESOLUTION_Y * factor);
+function createRainMesh(z, mercatorBounds, data, scaleColors, material, snow) {
+    const {dbz, resolutionX, resolutionY} = data;
     const threshold = scaleColors[0][0];
     const instances = [];
 
     for (let y = 0; y < resolutionY; y++) {
         for (let x = 0; x < resolutionX; x++) {
-            const level = dbz[Math.floor((y + 0.5) / resolutionY * 256) * 256 + Math.floor((x + 0.5) / resolutionX * 256)];
+            const level = dbz[y * resolutionX + x];
             if (!snow === !(level & 128) && (level & 127) >= threshold) {
                 for (let i = 0; i < Math.pow(2, ((level & 127) - threshold) / 10) * Math.max(1, z - 14); i++) {
                     instances.push({x, y});
@@ -221,7 +264,7 @@ function createRainMesh(z, mercatorBounds, dbz, scaleColors, material, snow) {
     mesh.position.y = mercatorBounds.y;
     mesh.scale.x = mercatorBounds.dx;
     mesh.scale.y = mercatorBounds.dy;
-    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : (14 - z) * 0.8) * 0.0002;
+    mesh.scale.z = Math.pow(2, z < 10 ? 10 - z : z < 14 ? 0 : 14 - z) * 0.0002;
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
     mesh.frustumCulled = false;
@@ -237,21 +280,20 @@ function disposeMesh(mesh) {
     }
 }
 
-function loadTile(tile, callback) {
+function loadImageTile(tile, callback) {
     this.constructor.prototype.loadTile.call(this, tile, err => {
         const {x, y, z} = tile.tileID.canonical;
-        const position = `${z}/${x}/${y}`;
+        const key = `${z}/${x}/${y}`;
         const texture = tile.texture;
         const layer = this._parentLayer;
-        const tileDict = this._tileDict;
+        const imageTiles = this._imageTiles;
 
-        if (texture && layer && !tileDict[position]) {
+        if (texture && layer && !imageTiles[key]) {
             const gl = this.map.painter.context.gl;
             const fb = gl.createFramebuffer();
             const [width, height] = texture.size;
             const pixels = new Uint8Array(width * height * 4);
             const dbz = tile._dbz = new Uint8Array(width * height);
-            const mercatorBounds = tile._mercatorBounds = getMercatorBounds(tile.tileID.canonical);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture.texture, 0);
@@ -277,34 +319,102 @@ function loadTile(tile, callback) {
                 }
             }
 
-            const group = layer._zoomGroups[z - 1];
-            const boxMesh = createBoxMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._meshMaterial);
-            if (boxMesh) {
-                tile._boxMesh = boxMesh;
-                group.add(boxMesh);
-            }
-            const rainMesh = createRainMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._rainMaterial);
-            if (rainMesh) {
-                tile._rainMesh = rainMesh;
-                group.add(rainMesh);
-            }
-            const snowMesh = createRainMesh(z, mercatorBounds, dbz, layer._scaleColors, layer._snowMaterial, true);
-            if (snowMesh) {
-                tile._snowMesh = snowMesh;
-                group.add(snowMesh);
-            }
+            imageTiles[key] = tile;
 
-            tileDict[position] = tile;
+            for (const cb of this._imageTileCallbacks[key] || []) {
+                cb();
+            }
         }
 
         callback(err);
     });
 }
 
-function unloadTile(tile, callback) {
+function unloadImageTile(tile, callback) {
     this.constructor.prototype.unloadTile.call(this, tile, err => {
         const {x, y, z} = tile.tileID.canonical;
-        const position = `${z}/${x}/${y}`;
+        const key = `${z}/${x}/${y}`;
+
+        delete this._imageTiles[key];
+        delete this._imageTileCallbacks[key];
+
+        if (callback) {
+            callback(err);
+        }
+    });
+}
+
+function loadParticleTile(tile, callback) {
+    const layer = this._parentLayer;
+    const sourceId = layer.source;
+    const imageSource = this.map.getSource(sourceId);
+    const imageTiles = imageSource._imageTiles;
+    const imageTileCallbacks = imageSource._imageTileCallbacks;
+    const {minzoom, maxzoom} = sources[sourceId];
+    const canonical = tile.tileID.canonical;
+    const imageTileKeys = getImageTileKeys(canonical, minzoom, maxzoom);
+
+    collect(imageTileKeys, (key, cb) => {
+        const cbs = imageTileCallbacks[key];
+
+        if (imageTiles[key]) {
+            cb();
+        } else if (cbs) {
+            cbs.push(cb);
+        } else {
+            imageTileCallbacks[key] = [cb];
+        }
+    }, () => {
+        if (tile.state === 'unloaded') {
+            callback(null);
+            return;
+        }
+
+        const z = canonical.z;
+        const factor = 1 / Math.pow(2, (z - 1) / 3);
+        const resolutionX = Math.ceil(RESOLUTION_X * factor);
+        const resolutionY = Math.ceil(RESOLUTION_Y * factor);
+        const data = {
+            dbz: new Uint8Array(resolutionX * resolutionY),
+            resolutionX,
+            resolutionY
+        };
+
+        for (let y = 0; y < resolutionY; y++) {
+            for (let x = 0; x < resolutionX; x++) {
+                const {key, u, v} = getImageTilePosition(canonical, minzoom, maxzoom, (x + 0.5) / resolutionX, (y + 0.5) / resolutionY);
+                const imageTile = imageTiles[key];
+                const [width, height] = imageTile.texture.size;
+
+                data.dbz[y * resolutionX + x] = imageTile._dbz[Math.floor(v * height) * width + Math.floor(u * width)];
+            }
+        }
+
+        const mercatorBounds = getMercatorBounds(canonical);
+        const scaleColors = layer._scaleColors;
+        const group = layer._zoomGroups[z - 1];
+        const boxMesh = createBoxMesh(z, mercatorBounds, data, scaleColors, layer._meshMaterial);
+        if (boxMesh) {
+            tile._boxMesh = boxMesh;
+            group.add(boxMesh);
+        }
+        const rainMesh = createRainMesh(z, mercatorBounds, data, scaleColors, layer._rainMaterial);
+        if (rainMesh) {
+            tile._rainMesh = rainMesh;
+            group.add(rainMesh);
+        }
+        const snowMesh = createRainMesh(z, mercatorBounds, data, scaleColors, layer._snowMaterial, true);
+        if (snowMesh) {
+            tile._snowMesh = snowMesh;
+            group.add(snowMesh);
+        }
+
+        callback(null);
+    });
+}
+
+function unloadParticleTile(tile, callback) {
+    this.constructor.prototype.unloadTile.call(this, tile, err => {
         const boxMesh = tile._boxMesh;
         const rainMesh = tile._rainMesh;
         const snowMesh = tile._snowMesh;
@@ -326,8 +436,6 @@ function unloadTile(tile, callback) {
             disposeMesh(snowMesh);
             delete tile._snowMesh;
         }
-
-        delete this._tileDict[position];
 
         if (callback) {
             callback(err);
@@ -514,17 +622,39 @@ export default class RainLayer extends Evented {
                 attribution
             });
 
-            const source = map.getSource(sourceId);
+            const imageSource = map.getSource(sourceId);
 
-            source._parentLayer = this;
-            source._tileDict = {};
-            source.loadTile = loadTile;
-            source.unloadTile = unloadTile;
+            imageSource._parentLayer = this;
+            imageSource._imageTiles = {};
+            imageSource._imageTileCallbacks = {};
+            imageSource.loadTile = loadImageTile;
+            imageSource.unloadTile = unloadImageTile;
 
             map.addLayer({
                 id: sourceId,
                 type: 'raster',
                 source: sourceId,
+                paint: {'raster-opacity': 0}
+            }, this.id);
+
+            map.addSource('rain-particles', {
+                type: 'raster',
+                tiles: [],
+                tileSize,
+                minzoom: 1,
+                maxzoom: 24
+            });
+
+            const particleSource = map.getSource('rain-particles');
+
+            particleSource._parentLayer = this;
+            particleSource.loadTile = loadParticleTile;
+            particleSource.unloadTile = unloadParticleTile;
+
+            map.addLayer({
+                id: 'rain-particles',
+                type: 'raster',
+                source: 'rain-particles',
                 paint: {'raster-opacity': 0}
             }, this.id);
 
@@ -535,12 +665,18 @@ export default class RainLayer extends Evented {
     _removeSource() {
         const sourceId = this.source;
         const map = this._map;
-        const source = map.getSource(sourceId);
+        const imageSource = map.getSource(sourceId);
+        const particleSource = map.getSource('rain-particles');
 
-        if (source) {
+        if (imageSource) {
             map.removeLayer(sourceId);
             map.removeSource(sourceId);
-            delete source._parentLayer;
+            delete imageSource._parentLayer;
+        }
+        if (particleSource) {
+            map.removeLayer('rain-particles');
+            map.removeSource('rain-particles');
+            delete particleSource._parentLayer;
         }
     }
 
