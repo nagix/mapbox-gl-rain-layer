@@ -294,6 +294,7 @@ function loadImageTile(tile, callback) {
             const fb = gl.createFramebuffer();
             const [width, height] = texture.size;
             const pixels = new Uint8Array(width * height * 4);
+            const colors = layer._colors;
             const dbz = tile._dbz = new Uint8Array(width * height);
 
             gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -302,22 +303,9 @@ function loadImageTile(tile, callback) {
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             gl.deleteFramebuffer(fb);
 
-            if (layer._colors) {
-                // Index scale will be supported in the next minor version
-                const colors = layer._colors.map(color => parseInt(color.replace('#', '0x'), 16));
-                for (let i = 0; i < dbz.length; i++) {
-                    const color = ((pixels[i * 4] * 256) + pixels[i * 4 + 1]) * 256 + pixels[i * 4 + 2];
-                    for (let j = 0; j < colors.length; j++) {
-                        if (color === color[j]) {
-                            dbz[i] = j;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                for (let i = 0; i < dbz.length; i++) {
-                    dbz[i] = pixels[i * 4];
-                }
+            for (let i = 0; i < dbz.length; i++) {
+                const color = (((pixels[i * 4] * 256) + pixels[i * 4 + 1]) * 256 + pixels[i * 4 + 2]) * 256 + pixels[i * 4 + 3];
+                dbz[i] = colors.get(color);
             }
 
             imageTiles[key] = tile;
@@ -463,7 +451,11 @@ export default class RainLayer extends Evented {
         this.meshOpacity = valueOrDefault(options.meshOpacity, 0.1);
         this.repaint = valueOrDefault(options.repaint, true);
         this._interval = sources[this.source].interval;
-        this._colors = sources[this.source].colors;
+        const colors = sources[this.source].colors;
+        const colorMap = this._colors = new Map();
+        for (const color of Object.keys(colors)) {
+            colorMap.set(parseInt(color.replace('#', '0x'), 16), colors[color]);
+        }
         this._onZoom = this._onZoom.bind(this);
     }
 
