@@ -92,6 +92,12 @@ function clamp(value, lower, upper) {
     return Math.min(Math.max(value, lower), upper);
 }
 
+function getColorVector(cssColor) {
+    const [r, g, b, a] = parseCSSColor(cssColor);
+
+    return new Vector4(r / 255, g / 255, b / 255, a);
+}
+
 function collect(keys, fn, callback) {
     const results = [];
 
@@ -476,29 +482,29 @@ export default class RainLayer extends Evented {
             visible: this.meshOpacity > 0
         });
 
-        let c = parseCSSColor(this.rainColor);
+        let color = getColorVector(this.rainColor);
         this._rainMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
                 scale: {type: 'f', value: 1.0},
-                color: {type: 'v4', value: new Vector4(c[0], c[1], c[2], c[3])}
+                color: {type: 'v4', value: color}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
-            transparent: c[3] < 1,
+            transparent: color.w < 1,
             side: DoubleSide
         });
 
-        c = parseCSSColor(this.snowColor);
+        color = getColorVector(this.snowColor);
         this._snowMaterial = new RawShaderMaterial({
             uniforms: {
                 time: {type: 'f', value: 0.0},
                 scale: {type: 'f', value: 1.0},
-                color: {type: 'v4', value: new Vector4(c[0], c[1], c[2], c[3])}
+                color: {type: 'v4', value: color}
             },
             vertexShader: rainVertexShader,
             fragmentShader: rainFragmentShader,
-            transparent: c[3] < 1,
+            transparent: color.w < 1,
             side: DoubleSide
         });
 
@@ -673,10 +679,10 @@ export default class RainLayer extends Evented {
     setRainColor(rainColor) {
         this.rainColor = rainColor || '#ccf';
         if (this._rainMaterial) {
-            const [r, g, b, a] = parseCSSColor(this.rainColor);
+            const color = getColorVector(this.rainColor);
 
-            this._rainMaterial.uniforms.color.value = new Vector4(r, g, b, a);
-            this._rainMaterial.transparent = a < 1;
+            this._rainMaterial.uniforms.color.value = color;
+            this._rainMaterial.transparent = color.w < 1;
         }
         return this;
     }
@@ -684,10 +690,10 @@ export default class RainLayer extends Evented {
     setSnowColor(snowColor) {
         this.snowColor = snowColor || '#fff';
         if (this._snowMaterial) {
-            const [r, g, b, a] = parseCSSColor(this.snowColor);
+            const color = getColorVector(this.snowColor);
 
-            this._snowMaterial.uniforms.color.value = new Vector4(r, g, b, a);
-            this._snowMaterial.transparent = a < 1;
+            this._snowMaterial.uniforms.color.value = color;
+            this._snowMaterial.transparent = color.w < 1;
         }
         return this;
     }
